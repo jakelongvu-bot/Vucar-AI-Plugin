@@ -1,0 +1,43 @@
+{
+  "name": "vucar",
+  "version": "1.0.0",
+  "description": "Read-only vehicle catalog search, used-car value estimates, and side-by-side value comparisons for Vietnam.",
+  "author": {
+    "name": "Vucar",
+    "url": "https://vucar.vn/"
+  },
+  "homepage": "https://github.com/VucarVN/vucar-agent-plugins/tree/main/plugins/vucar",
+  "repository": "https://github.com/VucarVN/vucar-agent-plugins",
+  "license": "Apache-2.0",
+  "keywords": [
+    "vucar",
+    "vietnam",
+    "used cars",
+    "vehicle valuation",
+    "vehicle catalog",
+    "mcp"
+  ],
+  "mcpServers": "./.mcp.json",
+  "interface": {
+    "displayName": "Vucar",
+    "shortDescription": "Read-only vehicle values for Vietnam",
+    "longDescription": "Use Vucar's public vehicle intelligence tools to search supported makes, models, and variants; estimate an indicative used-car value from vehicle attributes; and compare multiple vehicles. The integration is read-only, requires no Vucar account, and cannot create leads, bookings, auctions, or transactions.",
+    "developerName": "Vucar",
+    "category": "Data & Analytics",
+    "capabilities": [
+      "Read"
+    ],
+    "websiteURL": "https://vucar.vn/",
+    "privacyPolicyURL": "https://vucar.vn/policy/chinh-sach-bao-mat-thong-tin",
+    "termsOfServiceURL": "https://vucar.vn/policy/quy-che-hoat-dong",
+    "defaultPrompt": [
+      "Estimate the value of a 2020 Toyota Vios with 50,000 km",
+      "Show the vehicle models Vucar supports for Toyota",
+      "Compare indicative values for these used cars"
+    ],
+    "brandColor": "#0298F1",
+    "composerIcon": "./assets/icon.png",
+    "logo": "./assets/logo.png",
+    "screenshots": []
+  }
+}

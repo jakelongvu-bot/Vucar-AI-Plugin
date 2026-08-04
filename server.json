@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.vucarvn/vucar",
+  "title": "Vucar Vehicle Intelligence",
+  "description": "Read-only vehicle catalog search, value estimates, and comparisons for Vietnam.",
+  "repository": {
+    "url": "https://github.com/VucarVN/vucar-agent-plugins",
+    "source": "github"
+  },
+  "version": "1.0.0",
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://api.vucar.vn/mcp"
+    }
+  ]
+}

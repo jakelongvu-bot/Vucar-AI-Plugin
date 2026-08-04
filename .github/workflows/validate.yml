@@ -1,0 +1,108 @@
+name: Validate public plugin metadata
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  offline-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Python
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
+        with:
+          python-version: "3.12"
+
+      - name: Validate repository invariants
+        run: python3 scripts/validate_repository.py
+
+      - name: Run deterministic tests
+        run: python3 -m unittest discover -s tests -v
+
+  claude-code-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        claude-version:
+          - 2.1.177
+          - 2.1.220
+    env:
+      CLAUDE_CONFIG_DIR: ${{ runner.temp }}/claude-${{ matrix.claude-version }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      - name: Install pinned Claude Code validator
+        run: npm install --global @anthropic-ai/claude-code@${{ matrix.claude-version }}
+
+      - name: Validate Claude marketplace
+        run: claude plugin validate . --strict
+
+      - name: Validate Claude plugin
+        run: claude plugin validate ./plugins/vucar --strict
+
+      - name: Install from the marketplace in an isolated profile
+        run: |
+          claude plugin marketplace add "$GITHUB_WORKSPACE"
+          claude plugin install vucar@vucar --scope user
+          claude plugin details vucar@vucar
+          claude plugin list --json
+
+      - name: Dry-run Claude plugin tag
+        run: claude plugin tag ./plugins/vucar --dry-run
+
+  codex-ingestion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: "22"
+
+      - name: Install pinned Codex CLI
+        run: npm install --global @openai/codex@0.146.0
+
+      - name: Ingest and install the local Codex marketplace
+        run: |
+          codex plugin marketplace add "$GITHUB_WORKSPACE" --json
+          codex plugin add vucar@vucar --json
+          codex plugin list --available --json
+
+  mcp-registry-validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Download and verify MCP Publisher 1.8.0
+        run: |
+          curl --fail --silent --show-error --location \
+            https://github.com/modelcontextprotocol/registry/releases/download/v1.8.0/mcp-publisher_linux_amd64.tar.gz \
+            --output "$RUNNER_TEMP/mcp-publisher.tar.gz"
+          echo "1370446bbe74d562608e8005a6ccce02d146a661fbd78674e11cc70b9618d6cf  $RUNNER_TEMP/mcp-publisher.tar.gz" | sha256sum --check --strict
+          tar --extract --gzip --file "$RUNNER_TEMP/mcp-publisher.tar.gz" --directory "$RUNNER_TEMP" mcp-publisher
+
+      - name: Validate official MCP Registry metadata
+        run: '"$RUNNER_TEMP/mcp-publisher" validate'
