@@ -1,0 +1,53 @@
+name: Bug report
+description: Report a reproducible public plugin or MCP compatibility issue.
+title: "[Bug] "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Do not include personal data, credentials, private system details, or security vulnerabilities. Follow SECURITY.md for security reports.
+  - type: dropdown
+    id: client
+    attributes:
+      label: Client
+      options:
+        - Codex
+        - Claude Code
+        - Another MCP client
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Client and plugin versions
+      placeholder: "Client version; Vucar plugin 1.0.0"
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction with synthetic vehicle data
+      description: Include the minimum steps and remove machine-specific or sensitive information.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+    validations:
+      required: true
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety confirmation
+      options:
+        - label: This report contains no credentials, personal data, or security exploit details.
+          required: true

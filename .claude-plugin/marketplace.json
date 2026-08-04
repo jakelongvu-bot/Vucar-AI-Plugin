@@ -1,0 +1,20 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "vucar",
+  "description": "Official read-only vehicle intelligence plugins from Vucar.",
+  "owner": {
+    "name": "Vucar"
+  },
+  "plugins": [
+    {
+      "name": "vucar",
+      "description": "Search Vietnam vehicle catalogs, estimate used-car values, and compare vehicles through Vucar's read-only public MCP server.",
+      "author": {
+        "name": "Vucar"
+      },
+      "source": "./plugins/vucar",
+      "category": "productivity",
+      "homepage": "https://github.com/VucarVN/vucar-agent-plugins/tree/main/plugins/vucar"
+    }
+  ]
+}

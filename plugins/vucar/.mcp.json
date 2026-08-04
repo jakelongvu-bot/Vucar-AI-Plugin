@@ -1,0 +1,6 @@
+{
+  "vucar": {
+    "type": "http",
+    "url": "https://api.vucar.vn/mcp"
+  }
+}
