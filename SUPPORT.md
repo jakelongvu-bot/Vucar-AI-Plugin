@@ -2,7 +2,7 @@
 
 ## Usage and compatibility
 
-Search existing issues, then open a new issue at <https://github.com/VucarVN/vucar-agent-plugins/issues> with:
+Search existing issues, then open a new issue at <https://github.com/jakelongvu-bot/Vucar-AI-Plugin/issues> with:
 
 - The client and version, such as Codex or Claude Code.
 - The plugin version.

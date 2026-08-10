@@ -16,5 +16,5 @@ All notable changes to this project are documented here. This project follows Se
 - Offline repository validation, deterministic tests, and an opt-in live protocol smoke test.
 - Security, privacy, terms, support, contribution, release, and conduct policies, including integration-specific retention and user controls.
 
-[Unreleased]: https://github.com/VucarVN/vucar-agent-plugins/compare/vucar--v1.0.0...HEAD
-[1.0.0]: https://github.com/VucarVN/vucar-agent-plugins/releases/tag/vucar--v1.0.0
+[Unreleased]: https://github.com/jakelongvu-bot/Vucar-AI-Plugin/compare/vucar--v1.0.0...HEAD
+[1.0.0]: https://github.com/jakelongvu-bot/Vucar-AI-Plugin/releases/tag/vucar--v1.0.0

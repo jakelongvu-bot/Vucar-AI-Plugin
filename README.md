@@ -17,14 +17,14 @@ Every capability is read-only. The plugin cannot access customer records, employ
 ### Codex
 
 ```sh
-codex plugin marketplace add VucarVN/vucar-agent-plugins
+codex plugin marketplace add jakelongvu-bot/Vucar-AI-Plugin
 codex plugin add vucar@vucar
 ```
 
 ### Claude Code
 
 ```sh
-claude plugin marketplace add VucarVN/vucar-agent-plugins
+claude plugin marketplace add jakelongvu-bot/Vucar-AI-Plugin
 claude plugin install vucar@vucar
 ```
 

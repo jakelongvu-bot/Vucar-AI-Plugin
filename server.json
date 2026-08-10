@@ -4,7 +4,7 @@
   "title": "Vucar Vehicle Intelligence",
   "description": "Read-only vehicle catalog search, value estimates, and comparisons for Vietnam.",
   "repository": {
-    "url": "https://github.com/VucarVN/vucar-agent-plugins",
+    "url": "https://github.com/jakelongvu-bot/Vucar-AI-Plugin",
     "source": "github"
   },
   "version": "1.0.0",

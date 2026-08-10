@@ -6,8 +6,8 @@
     "name": "Vucar",
     "url": "https://vucar.vn/"
   },
-  "homepage": "https://github.com/VucarVN/vucar-agent-plugins/tree/main/plugins/vucar",
-  "repository": "https://github.com/VucarVN/vucar-agent-plugins",
+  "homepage": "https://github.com/jakelongvu-bot/Vucar-AI-Plugin/tree/main/plugins/vucar",
+  "repository": "https://github.com/jakelongvu-bot/Vucar-AI-Plugin",
   "license": "Apache-2.0",
   "keywords": [
     "vucar",
