@@ -38,8 +38,6 @@ jobs:
         claude_version:
           - 2.1.177
           - 2.1.220
-    env:
-      CLAUDE_CONFIG_DIR: ${{ runner.temp }}/claude-${{ matrix.claude_version }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -48,6 +46,9 @@ jobs:
         uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
+
+      - name: Configure isolated Claude profile
+        run: echo "CLAUDE_CONFIG_DIR=$RUNNER_TEMP/claude-${{ matrix.claude_version }}" >> "$GITHUB_ENV"
 
       - name: Install pinned Claude Code validator
         run: npm install --global @anthropic-ai/claude-code@${{ matrix.claude_version }}
