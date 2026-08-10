@@ -106,7 +106,7 @@ See [PRIVACY.md](PRIVACY.md), [TERMS.md](TERMS.md), and [SECURITY.md](SECURITY.m
 
 ## Release status
 
-Version `1.0.0` is the initial public release candidate. Publication and registry submission should happen only after the production endpoint and all release gates in [docs/RELEASE.md](docs/RELEASE.md) pass.
+Version `1.0.0` is the initial public release. The production endpoint is live and has passed the protocol and abuse-boundary gate. Marketplace, directory, and MCP Registry publication remain separate external review steps; see [docs/RELEASE.md](docs/RELEASE.md).
 
 ## License
 
