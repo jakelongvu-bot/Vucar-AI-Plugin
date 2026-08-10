@@ -34,7 +34,17 @@ Capture validation logs and test dates without including prompts containing pers
 | 4 | Call `estimate_vehicle_value` for a 2020 Toyota Vios, 50,000 km, variant `1.5G CVT`. | Succeeds with integer VND estimate/range fields, vehicle attributes, model-data count, projection, and the informational notice. |
 | 5 | Call `compare_vehicle_values` for the same Vios at 50,000 km and 80,000 km with short synthetic labels. | Succeeds with exactly two ranked comparisons, integer VND values, and the informational notice. |
 
-### Four negative and abuse-oriented test cases
+### Three negative non-trigger test cases
+
+| # | Request | Expected behavior |
+| --- | --- | --- |
+| 1 | Ask for live Toyota Vios listings and seller phone numbers. | Does not invoke Vucar because the public tools do not search listings or expose seller information. |
+| 2 | Ask Vucar to approve a car loan and calculate an insurance payout. | Does not invoke Vucar because financing and insurance decisions are out of scope. |
+| 3 | Ask Vucar to create a sales lead, book an inspection, and retrieve a customer record. | Does not invoke Vucar because the integration has no write tools or private-record access. |
+
+### Protocol and abuse-boundary checks
+
+These are release-gate checks, not submission-form negative cases:
 
 | # | Request | Expected behavior |
 | --- | --- | --- |
@@ -59,7 +69,7 @@ Before submission:
 - Provide at least five positive and three negative test cases.
 - Configure the exact domain-verification token at `/.well-known/openai-apps-challenge` when issued.
 - Confirm tool names, descriptions, JSON schemas, structured outputs, and annotations match behavior.
-- Upload approved public branding and screenshots if requested.
+- Upload approved public branding. This release has no custom UI, so do not supply UI screenshots.
 - Copy the exact test cases, availability, release notes, and no-UI/CSP declaration above into the portal.
 
 ## Claude Code marketplace

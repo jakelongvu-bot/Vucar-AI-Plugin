@@ -28,6 +28,14 @@ Codex, Claude Code, or another MCP client may separately process and retain prom
 
 The public tools require no Vucar account, API key, or authentication cookie. Do not send credentials to the endpoint.
 
-## Changes and questions
+## Retention
 
-Material integration-specific changes will be recorded in this repository. For a non-sensitive privacy question, use [Vucar's contact page](https://vucar.vn/contact). Use the private process in [SECURITY.md](SECURITY.md) for suspected data exposure.
+The MCP application does not create user profiles or write tool inputs or outputs to a Vucar application database. It processes the supplied vehicle attributes to produce the response, then releases that request data when processing completes.
+
+Pseudonymous rate-limit keys expire automatically after the short rate-limit window. Vucar's infrastructure providers may retain limited connection, reliability, and security metadata under Vucar's account configuration and their published terms. Vucar uses that metadata only to operate, secure, and troubleshoot the service, and does not use it to build advertising profiles.
+
+## User choices and questions
+
+You can stop future processing at any time by disabling or uninstalling the connector in your AI client. Because the public tools require no account and the MCP application does not persist tool inputs or outputs, there is no MCP-specific user profile to delete.
+
+Material integration-specific changes will be recorded in this repository. To ask a non-sensitive privacy question or exercise an applicable data right concerning infrastructure metadata, use [Vucar's contact page](https://vucar.vn/contact). Use the private process in [SECURITY.md](SECURITY.md) for suspected data exposure.
