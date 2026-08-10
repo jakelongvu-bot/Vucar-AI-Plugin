@@ -47,10 +47,10 @@ The smoke test must confirm initialization, exactly three expected tools, read-o
 Use clean client profiles or disposable environments.
 
 ```sh
-codex plugin marketplace add VucarVN/vucar-agent-plugins
+codex plugin marketplace add jakelongvu-bot/Vucar-AI-Plugin
 codex plugin add vucar@vucar
 
-claude plugin marketplace add VucarVN/vucar-agent-plugins
+claude plugin marketplace add jakelongvu-bot/Vucar-AI-Plugin
 claude plugin install vucar@vucar
 ```
 

@@ -2,7 +2,7 @@
 
 ## Shared evidence
 
-- Public repository: `https://github.com/VucarVN/vucar-agent-plugins`
+- Public repository: `https://github.com/jakelongvu-bot/Vucar-AI-Plugin`
 - Production MCP endpoint: `https://api.vucar.vn/mcp`
 - Version: `1.0.0`
 - Authentication: none

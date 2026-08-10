@@ -15,7 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "vucar"
 ENDPOINT = "https://api.vucar.vn/mcp"
 VERSION = "1.0.0"
-REPOSITORY = "https://github.com/VucarVN/vucar-agent-plugins"
+REPOSITORY = "https://github.com/jakelongvu-bot/Vucar-AI-Plugin"
 
 REQUIRED_FILES = {
     ".agents/plugins/marketplace.json",
