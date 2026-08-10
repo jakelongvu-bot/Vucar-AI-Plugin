@@ -326,7 +326,7 @@ def validate_version_and_docs(errors: list[str]) -> None:
     for gate in (
         "- 2.1.177",
         "- 2.1.220",
-        "@anthropic-ai/claude-code@${{ matrix.claude-version }}",
+        "@anthropic-ai/claude-code@${{ matrix.claude_version }}",
         "@openai/codex@0.146.0",
         "mcp-publisher\" validate",
     ):

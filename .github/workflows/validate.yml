@@ -35,11 +35,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        claude-version:
+        claude_version:
           - 2.1.177
           - 2.1.220
     env:
-      CLAUDE_CONFIG_DIR: ${{ runner.temp }}/claude-${{ matrix.claude-version }}
+      CLAUDE_CONFIG_DIR: ${{ runner.temp }}/claude-${{ matrix.claude_version }}
     steps:
       - name: Check out repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -50,7 +50,7 @@ jobs:
           node-version: "22"
 
       - name: Install pinned Claude Code validator
-        run: npm install --global @anthropic-ai/claude-code@${{ matrix.claude-version }}
+        run: npm install --global @anthropic-ai/claude-code@${{ matrix.claude_version }}
 
       - name: Validate Claude marketplace
         run: claude plugin validate . --strict
