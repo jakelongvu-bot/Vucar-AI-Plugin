@@ -4,6 +4,10 @@ All notable changes to this project are documented here. This project follows Se
 
 ## [Unreleased]
 
+### Fixed
+
+- Use an explicit HTTPS repository URL for Claude marketplace installation so consumers do not need GitHub SSH keys.
+
 ## [1.0.1] - 2026-08-21
 
 ### Security
