@@ -22,7 +22,7 @@ body:
     id: versions
     attributes:
       label: Client and plugin versions
-      placeholder: "Client version; Vucar plugin 1.0.0"
+      placeholder: "Client version; Vucar plugin 1.0.1"
     validations:
       required: true
   - type: textarea

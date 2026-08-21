@@ -12,6 +12,8 @@ The server intentionally exposes only three capability groups:
 
 Tool names and schemas are discovered directly from the MCP server. Treat estimates as informational ranges, not binding offers or professional appraisals.
 
+The server validates vehicle identity against its public catalog, rounds values to the nearest 1 million VND to avoid false precision, and returns a low-confidence warning when no comparable vehicles are present in the model data.
+
 ## Example requests
 
 - “Which Toyota models are supported?”

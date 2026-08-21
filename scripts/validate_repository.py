@@ -14,7 +14,7 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "vucar"
 ENDPOINT = "https://api.vucar.vn/mcp"
-VERSION = "1.0.0"
+VERSION = "1.0.1"
 REPOSITORY = "https://github.com/jakelongvu-bot/Vucar-AI-Plugin"
 
 REQUIRED_FILES = {
@@ -302,7 +302,7 @@ def validate_version_and_docs(errors: list[str]) -> None:
         errors,
     )
     require(
-        "vucar--v1.0.0" in (ROOT / "docs" / "RELEASE.md").read_text(encoding="utf-8"),
+        f"vucar--v{VERSION}" in (ROOT / "docs" / "RELEASE.md").read_text(encoding="utf-8"),
         "release instructions must use the Claude-compatible plugin tag",
         errors,
     )
