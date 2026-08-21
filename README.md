@@ -106,7 +106,7 @@ See [PRIVACY.md](PRIVACY.md), [TERMS.md](TERMS.md), and [SECURITY.md](SECURITY.m
 
 ## Release status
 
-Version `1.0.0` is the initial public release. The production endpoint is live and has passed the protocol and abuse-boundary gate. Marketplace, directory, and MCP Registry publication remain separate external review steps; see [docs/RELEASE.md](docs/RELEASE.md).
+Version `1.0.1` adds canonical catalog validation, non-reflective comparison labels, and stronger upstream abuse controls for public-directory review. Publish it only after the matching production endpoint has passed the protocol and abuse-boundary gate. Marketplace, directory, and MCP Registry publication remain separate external review steps; see [docs/RELEASE.md](docs/RELEASE.md).
 
 ## License
 

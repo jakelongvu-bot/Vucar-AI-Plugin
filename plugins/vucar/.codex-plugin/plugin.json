@@ -1,7 +1,7 @@
 {
   "name": "vucar",
-  "version": "1.0.0",
-  "description": "Read-only vehicle catalog search, used-car value estimates, and side-by-side value comparisons for Vietnam.",
+  "version": "1.0.1",
+  "description": "Read-only Vietnam used-car valuation, VND price estimates, vehicle catalog search, and side-by-side car comparisons.",
   "author": {
     "name": "Vucar",
     "url": "https://vucar.vn/"
@@ -21,7 +21,7 @@
   "interface": {
     "displayName": "Vucar",
     "shortDescription": "Read-only vehicle values for Vietnam",
-    "longDescription": "Use Vucar's public vehicle intelligence tools to search supported makes, models, and variants; estimate an indicative used-car value from vehicle attributes; and compare multiple vehicles. The integration is read-only, requires no Vucar account, and cannot create leads, bookings, auctions, or transactions.",
+    "longDescription": "Use Vucar's public vehicle intelligence tools for Vietnam used-car valuation: search supported makes, models, years, and variants; estimate indicative market and resale values in VND; and compare multiple vehicle price estimates. The integration is read-only, requires no Vucar account, and cannot search live listings or create leads, bookings, auctions, or transactions.",
     "developerName": "Vucar",
     "category": "Data & Analytics",
     "capabilities": [

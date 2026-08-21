@@ -33,14 +33,14 @@ Verify production independently:
 python3 scripts/smoke_test_mcp.py
 ```
 
-The smoke test must confirm initialization, exactly three expected tools, read-only annotations, and no authentication requirement. It exercises five valid requests and four invalid or abuse-oriented requests before marketplace submission.
+The smoke test must confirm initialization, exactly three expected tools, read-only annotations, and no authentication requirement. It exercises six valid requests and seven invalid or abuse-oriented boundaries before marketplace submission.
 
 ## 4. Publish the repository
 
 1. Create a new public repository with no inherited private history.
 2. Push `main` only after the safety review.
 3. Enable branch protection, required validation checks, secret scanning, dependency alerts, and private vulnerability reporting.
-4. Create the Claude-compatible plugin tag `vucar--v1.0.0` and a GitHub release after the endpoint gate passes.
+4. Create the Claude-compatible plugin tag `vucar--v1.0.1` and a GitHub release after the endpoint gate passes.
 
 ## 5. Test installations
 
@@ -58,7 +58,7 @@ Start a new client session, discover the tools, and run a catalog search, one es
 
 ## 6. MCP Registry
 
-Validate `server.json`, authenticate the publisher with the `io.github.vucarvn` namespace, and publish the immutable `1.0.0` version using the official MCP publisher. Confirm the server appears in the Registry before announcing completion.
+Validate `server.json`, authenticate the publisher with the `io.github.vucarvn` namespace, and publish the immutable `1.0.1` version using the official MCP publisher. Confirm the server appears in the Registry before announcing completion.
 
 ## 7. Marketplace submissions
 
