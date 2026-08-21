@@ -1,10 +1,10 @@
 {
-  "$schema": "https://developers.openai.com/apps-sdk/schemas/chatgpt-app-submission.v1.json",
+  "$schema": "https://developers.openai.com/plugins/schemas/chatgpt-app-submission.v1.json",
   "schema_version": 1,
   "app_info": {
     "display_name": "Vucar Vehicle Intelligence",
     "subtitle": "Vietnam used-car values",
-    "description": "Vucar helps users explore supported vehicle brands, models, years, and variants; estimate an indicative used-car market value in VND; and compare estimated values for two to five vehicles in Vietnam. All capabilities are public and read-only. Estimates are informational ranges, not binding purchase offers or certified appraisals.",
+    "description": "Vucar Vehicle Intelligence helps users search supported car brands, models, years, and variants in Vietnam; estimate indicative used-car market and resale values in VND; and compare vehicle price estimates for two to five cars. It is public and read-only and does not search live listings or produce binding offers, certified appraisals, insurance values, or lending decisions.",
     "category": "SHOPPING"
   },
   "tools": {
@@ -72,18 +72,18 @@
     },
     {
       "description": "Estimate one used vehicle's indicative market value.",
-      "user_prompt": "Estimate the value in VND of a 2020 Toyota Vios 1.5G CVT with 50,000 km.",
+      "user_prompt": "Estimate the value in VND of a 2020 Toyota Vios 1.5G with 50,000 km.",
       "file_attachment_urls": null,
       "tools_triggered": "estimate_vehicle_value",
-      "expected_output": "Returns the vehicle attributes, an indicative market value and range in integer VND, depreciation data, and the informational-estimate notice.",
+      "expected_output": "Returns canonical vehicle attributes, an indicative market value and range rounded to 1 million VND, model-data coverage, a confidence signal, depreciation data, and the informational-estimate notice.",
       "expected_output_url": null
     },
     {
       "description": "Compare the indicative values of two used vehicles.",
-      "user_prompt": "Compare a 2020 Toyota Vios 1.5G CVT with 50,000 km against the same car with 80,000 km.",
+      "user_prompt": "Compare a 2020 Toyota Vios 1.5G with 50,000 km against the same car with 80,000 km.",
       "file_attachment_urls": null,
       "tools_triggered": "compare_vehicle_values",
-      "expected_output": "Returns exactly two ranked vehicle comparisons with estimated values and ranges in integer VND plus the informational-estimate notice.",
+      "expected_output": "Returns exactly two ranked vehicle comparisons with original input indexes, canonical mileage-aware labels, rounded VND estimates and ranges, confidence signals, and the informational-estimate notice.",
       "expected_output_url": null
     }
   ],

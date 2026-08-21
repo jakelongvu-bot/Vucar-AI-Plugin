@@ -1,7 +1,7 @@
 {
   "name": "vucar",
-  "version": "1.0.0",
-  "description": "Read-only vehicle catalog search, used-car value estimates, and side-by-side value comparisons for Vietnam.",
+  "version": "1.0.1",
+  "description": "Read-only Vietnam used-car valuation, VND price estimates, vehicle catalog search, and side-by-side car comparisons.",
   "author": {
     "name": "Vucar",
     "url": "https://vucar.vn/"
