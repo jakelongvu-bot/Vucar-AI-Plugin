@@ -50,7 +50,7 @@ Use clean client profiles or disposable environments.
 codex plugin marketplace add jakelongvu-bot/Vucar-AI-Plugin
 codex plugin add vucar@vucar
 
-claude plugin marketplace add jakelongvu-bot/Vucar-AI-Plugin
+claude plugin marketplace add https://github.com/jakelongvu-bot/Vucar-AI-Plugin.git
 claude plugin install vucar@vucar
 ```
 
