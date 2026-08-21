@@ -24,7 +24,7 @@ codex plugin add vucar@vucar
 ### Claude Code
 
 ```sh
-claude plugin marketplace add jakelongvu-bot/Vucar-AI-Plugin
+claude plugin marketplace add https://github.com/jakelongvu-bot/Vucar-AI-Plugin.git
 claude plugin install vucar@vucar
 ```
 
