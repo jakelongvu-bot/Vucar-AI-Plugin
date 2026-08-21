@@ -12,6 +12,7 @@ from typing import Any
 
 ENDPOINT = "https://api.vucar.vn/mcp"
 EXPECTED_SERVER = "vucar-vehicle-intelligence"
+EXPECTED_VERSION = "1.0.1"
 EXPECTED_TOOLS = {
     "compare_vehicle_values",
     "estimate_vehicle_value",
@@ -23,9 +24,16 @@ VEHICLE = {
     "model": "Vios",
     "year": 2020,
     "mileage_km": 50_000,
-    "variant": "1.5G CVT",
+    "variant": "1.5G",
+}
+EXPECTED_CANONICAL_VEHICLE = {
+    **VEHICLE,
+    "brand": "toyota",
+    "model": "vios",
 }
 PERSONAL_DATA_SENTINEL = "synthetic-personal-data-sentinel"
+MODEL_SENTINEL = "DefinitelyNotARealModel"
+COMPARISON_LABEL_SENTINEL = "caller-label-must-not-be-reflected"
 
 
 def parse_response(body: bytes, content_type: str) -> dict[str, Any]:
@@ -52,7 +60,7 @@ def request_headers(origin: str | None = None) -> dict[str, str]:
         "Accept": "application/json, text/event-stream",
         "Content-Type": "application/json",
         "MCP-Protocol-Version": PROTOCOL_VERSION,
-        "User-Agent": "vucar-agent-plugins-smoke/1.0.0",
+        "User-Agent": "vucar-agent-plugins-smoke/1.0.1",
     }
     if origin is not None:
         headers["Origin"] = origin
@@ -87,6 +95,7 @@ def post(
 def expect_http_error(
     payload: Any,
     expected_status: int,
+    expected_code: int,
     origin: str | None = None,
 ) -> None:
     request = urllib.request.Request(
@@ -103,12 +112,15 @@ def expect_http_error(
             raise RuntimeError(
                 f"expected HTTP {expected_status}, received {exc.code}: {body[:300]!r}"
             ) from exc
-        if body:
-            value = json.loads(body)
-            if not isinstance(value, dict) or "error" not in value:
-                raise RuntimeError(
-                    f"HTTP {expected_status} response was not a JSON-RPC error"
-                )
+        if not body:
+            raise RuntimeError(f"HTTP {expected_status} response had no JSON-RPC body")
+        value = json.loads(body)
+        error = value.get("error") if isinstance(value, dict) else None
+        if not isinstance(error, dict) or error.get("code") != expected_code:
+            raise RuntimeError(
+                f"HTTP {expected_status} response did not contain JSON-RPC code "
+                f"{expected_code}: {value!r}"
+            )
         return
     raise RuntimeError(f"expected HTTP {expected_status}, request succeeded")
 
@@ -137,7 +149,7 @@ def main() -> int:
                     "capabilities": {},
                     "clientInfo": {
                         "name": "vucar-agent-plugins-smoke",
-                        "version": "1.0.0",
+                        "version": EXPECTED_VERSION,
                     },
                 },
             }
@@ -148,6 +160,7 @@ def main() -> int:
         if (
             not isinstance(server_info, dict)
             or server_info.get("name") != EXPECTED_SERVER
+            or server_info.get("version") != EXPECTED_VERSION
         ):
             raise RuntimeError(f"unexpected server identity: {server_info}")
         if initialized["result"].get("protocolVersion") != PROTOCOL_VERSION:
@@ -235,6 +248,43 @@ def main() -> int:
             or estimate_data["estimated_market_value_vnd"] <= 0
         ):
             raise RuntimeError("estimate smoke returned an invalid VND value")
+        estimate_range = estimate_data.get("estimated_range_vnd")
+        range_fields = (
+            "conservative_low_vnd",
+            "below_average_vnd",
+            "above_average_vnd",
+            "optimistic_high_vnd",
+        )
+        if (
+            not isinstance(estimate_range, dict)
+            or not all(isinstance(estimate_range.get(field), int) for field in range_fields)
+            or not isinstance(estimate_data.get("depreciation_projection"), list)
+            or not isinstance(estimate_data.get("similar_vehicles_in_model_data"), int)
+            or not isinstance(estimate_data.get("notice"), str)
+            or not estimate_data["notice"].strip()
+        ):
+            raise RuntimeError("estimate smoke returned an incomplete result shape")
+
+        canonicalized, session_id = post(
+            {
+                "jsonrpc": "2.0",
+                "id": 11,
+                "method": "tools/call",
+                "params": {
+                    "name": "estimate_vehicle_value",
+                    "arguments": {
+                        **VEHICLE,
+                        "brand": "toyota",
+                        "model": "vios",
+                        "variant": "1.5g",
+                    },
+                },
+            },
+            session_id,
+        )
+        canonicalized_data = tool_result(canonicalized, "estimate_vehicle_value")
+        if canonicalized_data.get("vehicle") != EXPECTED_CANONICAL_VEHICLE:
+            raise RuntimeError("case-insensitive inputs were not returned canonically")
 
         comparison, session_id = post(
             {
@@ -245,8 +295,12 @@ def main() -> int:
                     "name": "compare_vehicle_values",
                     "arguments": {
                         "vehicles": [
-                            {"label": "50k km", **VEHICLE},
-                            {"label": "80k km", **VEHICLE, "mileage_km": 80_000},
+                            {"label": COMPARISON_LABEL_SENTINEL, **VEHICLE},
+                            {
+                                "label": f"{COMPARISON_LABEL_SENTINEL}-second",
+                                **VEHICLE,
+                                "mileage_km": 80_000,
+                            },
                         ]
                     },
                 },
@@ -256,6 +310,73 @@ def main() -> int:
         comparison_data = tool_result(comparison, "compare_vehicle_values")
         if len(comparison_data.get("comparisons", [])) != 2:
             raise RuntimeError("comparison smoke did not return two vehicles")
+        if COMPARISON_LABEL_SENTINEL in json.dumps(comparison):
+            raise RuntimeError("caller-provided comparison label was reflected")
+        expected_labels = {
+            "2020 toyota vios 1.5G · 50,000 km",
+            "2020 toyota vios 1.5G · 80,000 km",
+        }
+        comparisons = comparison_data["comparisons"]
+        if {item.get("label") for item in comparisons} != expected_labels:
+            raise RuntimeError("comparison labels were not computed canonically")
+        if (
+            [item.get("rank_by_estimated_value") for item in comparisons] != [1, 2]
+            or {item.get("input_index") for item in comparisons} != {0, 1}
+            or not all(
+                isinstance(item.get("estimated_market_value_vnd"), int)
+                and item["estimated_market_value_vnd"] > 0
+                and item.get("confidence") in {"low", "medium"}
+                and isinstance(item.get("conservative_low_vnd"), int)
+                and isinstance(item.get("optimistic_high_vnd"), int)
+                for item in comparisons
+            )
+            or not isinstance(comparison_data.get("notice"), str)
+            or not comparison_data["notice"].strip()
+        ):
+            raise RuntimeError("comparison smoke returned an incomplete result shape")
+
+        unsupported, _ = post(
+            {
+                "jsonrpc": "2.0",
+                "id": 12,
+                "method": "tools/call",
+                "params": {
+                    "name": "estimate_vehicle_value",
+                    "arguments": {**VEHICLE, "model": MODEL_SENTINEL},
+                },
+            },
+            session_id,
+        )
+        if (
+            unsupported is None
+            or not isinstance(unsupported.get("result"), dict)
+            or unsupported["result"].get("isError") is not True
+            or MODEL_SENTINEL in json.dumps(unsupported)
+        ):
+            raise RuntimeError("unsupported vehicle did not fail without reflection")
+
+        missing_mileage, _ = post(
+            {
+                "jsonrpc": "2.0",
+                "id": 13,
+                "method": "tools/call",
+                "params": {
+                    "name": "estimate_vehicle_value",
+                    "arguments": {
+                        key: value
+                        for key, value in VEHICLE.items()
+                        if key != "mileage_km"
+                    },
+                },
+            },
+            session_id,
+        )
+        if (
+            missing_mileage is None
+            or not isinstance(missing_mileage.get("result"), dict)
+            or missing_mileage["result"].get("isError") is not True
+        ):
+            raise RuntimeError("missing mileage did not fail schema validation")
 
         invalid, _ = post(
             {
@@ -283,20 +404,23 @@ def main() -> int:
                 {"jsonrpc": "2.0", "id": 8, "method": "tools/list", "params": {}},
             ],
             400,
+            -32600,
         )
         expect_http_error(
             {"jsonrpc": "2.0", "id": 9, "method": "tools/list", "params": {}},
             403,
+            -32002,
             origin="https://attacker.example",
         )
         expect_http_error(
             {"jsonrpc": "2.0", "id": 10, "method": "tools/list", "padding": "x" * (65 * 1024)},
             413,
+            -32013,
         )
 
         print(
             f"Live MCP release gate passed: {server_info['name']} exposed exactly "
-            f"{len(tools)} read-only tools; 5 positive and 4 negative checks passed."
+            f"{len(tools)} read-only tools; 6 positive and 7 negative checks passed."
         )
         return 0
     except (

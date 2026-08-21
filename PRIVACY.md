@@ -1,12 +1,12 @@
 # Privacy Notice
 
-Effective: 4 August 2026
+Effective: 21 August 2026
 
 This repository notice describes data handling specific to the public Vucar vehicle intelligence MCP integration. It supplements Vucar's [official privacy policy](https://vucar.vn/policy/chinh-sach-bao-mat-thong-tin).
 
 ## Data sent to Vucar
 
-When an AI client calls a tool, it sends the vehicle attributes present in that request. Depending on the tool, these can include brand, model, optional variant, production year, mileage, and an optional comparison label. Catalog requests can send a partial brand/model/year hierarchy.
+When an AI client calls a tool, it sends the vehicle attributes present in that request. Depending on the tool, these can include brand, model, optional variant, production year, and mileage. Catalog requests can send a partial brand/model/year hierarchy. Comparison requests may include a legacy optional label for client compatibility; the service ignores that text and derives result labels from validated, canonical vehicle attributes.
 
 Some fields accept free-form text, so technical schema controls cannot prevent every accidental disclosure. Do not place names, phone numbers, email addresses, street addresses, account identifiers, precise location, license-plate numbers, vehicle-identification numbers, or any other personal or confidential information in any field. The public tools neither require nor request these details.
 
@@ -18,7 +18,7 @@ Before rate-limit identifiers are sent to Upstash, the service transforms the cl
 
 ## Outputs
 
-The service returns public vehicle taxonomy and indicative valuation data. It does not return customer, employee, dealer, lead, booking, inspection, auction, bid, payment, or internal reporting records.
+The service returns public vehicle taxonomy and indicative valuation data. Values are rounded to the nearest 1 million VND, and results disclose a confidence signal derived from comparable-model coverage. It does not return customer, employee, dealer, lead, booking, inspection, auction, bid, payment, or internal reporting records.
 
 ## AI client processing
 
