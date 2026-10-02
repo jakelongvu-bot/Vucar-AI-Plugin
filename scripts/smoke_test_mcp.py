@@ -4,11 +4,14 @@
 from __future__ import annotations
 
 import json
+import math
 import sys
+import time
 import urllib.error
 import urllib.parse
 import urllib.request
 from datetime import datetime
+from email.utils import parsedate_to_datetime
 from typing import Any
 
 
@@ -44,6 +47,94 @@ EXPECTED_CANONICAL_VEHICLE = {
 PERSONAL_DATA_SENTINEL = "synthetic-personal-data-sentinel"
 MODEL_SENTINEL = "DefinitelyNotARealModel"
 COMPARISON_LABEL_SENTINEL = "caller-label-must-not-be-reflected"
+MAX_REQUEST_COST = 25
+RATE_LIMIT_WINDOW_SECONDS = 60
+MAX_RATE_LIMIT_RETRIES = 2
+MAX_RATE_LIMIT_WAIT_SECONDS = 120
+RESET_SAFETY_SECONDS = 0.5
+
+
+class RateLimitAwareOpener:
+    """Respect the public weighted budget without weakening HTTP error gates."""
+
+    def __init__(self, *, opener=None, clock=None, sleeper=None):
+        self.opener = opener
+        self.clock = clock
+        self.sleeper = sleeper
+        self.remaining: float | None = None
+        self.reset: float | None = None
+
+    def _now(self) -> float:
+        return (self.clock or time.time)()
+
+    @staticmethod
+    def _number(value: Any) -> float | None:
+        try:
+            number = float(value)
+        except (TypeError, ValueError):
+            return None
+        return number if math.isfinite(number) and number >= 0 else None
+
+    def _observe(self, headers: Any) -> None:
+        if headers is None:
+            return
+        remaining = self._number(headers.get("RateLimit-Remaining"))
+        reset = self._number(headers.get("RateLimit-Reset"))
+        if remaining is not None:
+            self.remaining = remaining
+            # Vucar emits the reset as Unix seconds, not a relative duration.
+            self.reset = reset
+
+    def _wait(self, delay: float) -> None:
+        if delay <= 0:
+            return
+        if not math.isfinite(delay) or delay > MAX_RATE_LIMIT_WAIT_SECONDS:
+            raise RuntimeError("rate-limit wait exceeds the smoke test's bounded wait budget")
+        print(f"Waiting {delay:.1f}s for the public rate-limit window.", flush=True)
+        (self.sleeper or time.sleep)(delay)
+
+    def _pause_for_budget(self) -> None:
+        if self.remaining is not None and self.remaining < MAX_REQUEST_COST:
+            delay = (self.reset - self._now() + RESET_SAFETY_SECONDS
+                     if self.reset is not None else RATE_LIMIT_WINDOW_SECONDS + RESET_SAFETY_SECONDS)
+            self._wait(delay)
+            self.remaining = self.reset = None
+
+    def _retry_delay(self, headers: Any) -> float:
+        raw_retry = headers.get("Retry-After") if headers is not None else None
+        retry = self._number(raw_retry)
+        if retry is None and raw_retry is not None:
+            try:
+                retry = max(0.0, parsedate_to_datetime(raw_retry).timestamp() - self._now())
+            except (TypeError, ValueError, OverflowError):
+                pass
+        reset_delay = max(0.0, self.reset - self._now()) if self.reset is not None else None
+        known_delays = [value for value in (retry, reset_delay) if value is not None]
+        return max(1.0, *known_delays) + RESET_SAFETY_SECONDS if known_delays else RATE_LIMIT_WINDOW_SECONDS + RESET_SAFETY_SECONDS
+
+    def open(self, request: Any, *, timeout: float = 20):
+        for attempt in range(MAX_RATE_LIMIT_RETRIES + 1):
+            self._pause_for_budget()
+            try:
+                response = (self.opener or urllib.request.urlopen)(request, timeout=timeout)
+            except urllib.error.HTTPError as error:
+                self._observe(error.headers)
+                if error.code != 429 or attempt == MAX_RATE_LIMIT_RETRIES:
+                    raise
+                delay = self._retry_delay(error.headers)
+                error.close()
+                self._wait(delay)
+                self.remaining = self.reset = None
+            else:
+                self._observe(response.headers)
+                return response
+
+
+_RATE_LIMITED_OPENER = RateLimitAwareOpener()
+
+
+def open_request(request: Any, *, timeout: float = 20):
+    return _RATE_LIMITED_OPENER.open(request, timeout=timeout)
 
 
 def parse_response(body: bytes, content_type: str) -> dict[str, Any]:
@@ -91,7 +182,7 @@ def post(
         headers=headers,
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=20) as response:
+    with open_request(request, timeout=20) as response:
         next_session = response.headers.get("MCP-Session-Id") or session_id
         body = response.read(256_001)
         if len(body) > 256_000:
@@ -117,7 +208,7 @@ def expect_http_error(
         method="POST",
     )
     try:
-        urllib.request.urlopen(request, timeout=20)
+        open_request(request, timeout=20)
     except urllib.error.HTTPError as exc:
         body = exc.read()
         if exc.code != expected_status:
@@ -530,7 +621,7 @@ def main() -> int:
             raise RuntimeError("optional valuation failure did not preserve arithmetic without input reflection")
 
         report_request = urllib.request.Request(estimate_data["report_url"], headers={"User-Agent": f"vucar-agent-plugins-smoke/{EXPECTED_VERSION}"})
-        with urllib.request.urlopen(report_request, timeout=20) as report_response:
+        with open_request(report_request, timeout=20) as report_response:
             html = report_response.read(256_001)
             if report_response.status != 200 or "text/html" not in report_response.headers.get("Content-Type", "") or "no-store" not in report_response.headers.get("Cache-Control", "") or len(html) > 256_000 or b"Vucar" not in html:
                 raise RuntimeError("valuation report did not return a bounded current HTML reference")

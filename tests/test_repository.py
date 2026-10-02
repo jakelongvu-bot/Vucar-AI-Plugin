@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib.util
+import io
 import json
 import re
 import struct
@@ -10,7 +11,8 @@ import unittest
 import zipfile
 from copy import deepcopy
 from pathlib import Path
-from unittest.mock import patch
+from types import SimpleNamespace
+from unittest.mock import Mock, patch
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -210,6 +212,87 @@ class OwnerResultGateTest(unittest.TestCase):
             self.assertFalse(SMOKE.integer_vnd(invalid))
         self.assertTrue(SMOKE.integer_vnd(0))
         self.assertTrue(SMOKE.integer_vnd(-1, signed=True))
+
+
+class RateLimitOpenerTest(unittest.TestCase):
+    def make_opener(self, outcomes):
+        now = [1000.0]
+        waits = []
+
+        def sleep(delay):
+            waits.append(delay)
+            now[0] += delay
+
+        network = Mock(side_effect=outcomes)
+        opener = SMOKE.RateLimitAwareOpener(opener=network, clock=lambda: now[0], sleeper=sleep)
+        return opener, network, waits, now
+
+    def rate_error(self, headers):
+        return SMOKE.urllib.error.HTTPError(SMOKE.ENDPOINT, 429, "Too Many Requests", headers, io.BytesIO())
+
+    def test_waits_for_reset_before_a_request_can_exhaust_the_budget(self) -> None:
+        first = SimpleNamespace(headers={"RateLimit-Remaining": "24", "RateLimit-Reset": "1060"})
+        second = SimpleNamespace(headers={})
+        opener, network, waits, now = self.make_opener([first, second])
+        self.assertIs(opener.open("first"), first)
+        self.assertEqual(waits, [])
+        self.assertIs(opener.open("second"), second)
+        self.assertEqual(waits, [60.5])
+        self.assertEqual(now[0], 1060.5)
+        self.assertEqual(network.call_count, 2)
+
+    def test_full_largest_request_budget_does_not_pause(self) -> None:
+        first = SimpleNamespace(headers={"RateLimit-Remaining": "25", "RateLimit-Reset": "1060"})
+        opener, network, waits, _ = self.make_opener([first, SimpleNamespace(headers={})])
+        opener.open("first")
+        opener.open("second")
+        self.assertEqual(waits, [])
+        self.assertEqual(network.call_count, 2)
+
+    def test_retry_honors_the_later_retry_after_or_reset(self) -> None:
+        error = self.rate_error({"Retry-After": "3", "RateLimit-Remaining": "0", "RateLimit-Reset": "1005"})
+        response = SimpleNamespace(headers={"RateLimit-Remaining": "59", "RateLimit-Reset": "1060"})
+        opener, network, waits, _ = self.make_opener([error, response])
+        self.assertIs(opener.open("request"), response)
+        self.assertEqual(waits, [5.5])
+        self.assertEqual(network.call_count, 2)
+        self.assertTrue(error.fp.closed)
+
+    def test_retry_accepts_an_http_date(self) -> None:
+        error = self.rate_error({"Retry-After": "Thu, 01 Jan 1970 00:16:45 GMT"})
+        opener, network, waits, _ = self.make_opener([error, SimpleNamespace(headers={})])
+        opener.open("request")
+        self.assertEqual(waits, [5.5])
+        self.assertEqual(network.call_count, 2)
+
+    def test_repeated_rate_limits_fail_after_two_retries(self) -> None:
+        errors = [self.rate_error({"Retry-After": "2"}) for _ in range(3)]
+        opener, network, waits, _ = self.make_opener(errors)
+        with self.assertRaises(SMOKE.urllib.error.HTTPError) as raised:
+            opener.open("request")
+        self.assertIs(raised.exception, errors[-1])
+        self.assertEqual(network.call_count, 3)
+        self.assertEqual(waits, [2.5, 2.5])
+
+    def test_non_rate_limit_errors_propagate_without_retries(self) -> None:
+        for status in (403, 503):
+            with self.subTest(status=status):
+                error = SMOKE.urllib.error.HTTPError(SMOKE.ENDPOINT, status, "Expected error", {}, io.BytesIO())
+                opener, network, waits, _ = self.make_opener([error])
+                with self.assertRaises(SMOKE.urllib.error.HTTPError) as raised:
+                    opener.open("request")
+                self.assertIs(raised.exception, error)
+                self.assertEqual(network.call_count, 1)
+                self.assertEqual(waits, [])
+                self.assertFalse(error.fp.closed)
+
+    def test_excessive_retry_after_fails_instead_of_retrying_early(self) -> None:
+        error = self.rate_error({"Retry-After": "121"})
+        opener, network, waits, _ = self.make_opener([error])
+        with self.assertRaisesRegex(RuntimeError, "bounded wait budget"):
+            opener.open("request")
+        self.assertEqual(network.call_count, 1)
+        self.assertEqual(waits, [])
 
 
 if __name__ == "__main__":
