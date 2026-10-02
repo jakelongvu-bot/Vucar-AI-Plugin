@@ -1,13 +1,13 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.vucarvn/vucar",
-  "title": "Vucar Vehicle Intelligence",
-  "description": "Read-only Vietnam used-car valuation, VND price estimates, catalog search, and comparisons.",
+  "title": "Vucar Owner and Seller Tools",
+  "description": "Read-only Vietnam car values, offers/net proceeds, upgrade cash gaps, and selling guides.",
   "repository": {
     "url": "https://github.com/jakelongvu-bot/Vucar-AI-Plugin",
     "source": "github"
   },
-  "version": "1.0.1",
+  "version": "2.0.0",
   "remotes": [
     {
       "type": "streamable-http",

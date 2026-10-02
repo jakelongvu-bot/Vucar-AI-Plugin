@@ -29,6 +29,9 @@ jobs:
       - name: Run deterministic tests
         run: python3 -m unittest discover -s tests -v
 
+      - name: Build and inspect the OpenAI review ZIP
+        run: python3 scripts/build_review_zip.py --output "$RUNNER_TEMP/vucar-owner-seller-plugin-2.0.0.zip"
+
   claude-code-validation:
     runs-on: ubuntu-latest
     timeout-minutes: 10

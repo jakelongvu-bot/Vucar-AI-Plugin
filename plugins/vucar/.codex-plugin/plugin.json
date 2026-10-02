@@ -1,7 +1,7 @@
 {
   "name": "vucar",
-  "version": "1.0.1",
-  "description": "Read-only Vietnam used-car valuation, VND price estimates, vehicle catalog search, and side-by-side car comparisons.",
+  "version": "2.0.0",
+  "description": "Read-only tools for car owners in Vietnam: indicative VND values, offer and net-proceeds checks, upgrade cash gaps, and selling preparation.",
   "author": {
     "name": "Vucar",
     "url": "https://vucar.vn/"
@@ -14,14 +14,16 @@
     "vietnam",
     "used cars",
     "vehicle valuation",
-    "vehicle catalog",
+    "sell car",
+    "net proceeds",
+    "upgrade budget",
     "mcp"
   ],
   "mcpServers": "./.mcp.json",
   "interface": {
     "displayName": "Vucar",
-    "shortDescription": "Read-only vehicle values for Vietnam",
-    "longDescription": "Use Vucar's public vehicle intelligence tools for Vietnam used-car valuation: search supported makes, models, years, and variants; estimate indicative market and resale values in VND; and compare multiple vehicle price estimates. The integration is read-only, requires no Vucar account, and cannot search live listings or create leads, bookings, auctions, or transactions.",
+    "shortDescription": "Value and sell cars in Vietnam",
+    "longDescription": "Help car owners in Vietnam understand an indicative used-car value, assess a supplied offer, calculate the amount left after known sale deductions, estimate the cash gap to a chosen replacement car, and prepare to sell. Vucar supplies a supported vehicle catalog, valuation sources and current report links, and read-only calculators. Values are in VND; low or unknown pricing confidence and unverified range calibration are disclosed. Missing fees, loan payoff, and purchase costs remain unknown, so a partial calculation is not a final net amount. No Vucar account is needed. Use non-identifying vehicle attributes and relevant amounts only. The tools do not search live listings or private customer records, create leads or bookings, contact sellers, arrange finance, accept offers, or process payments. Estimates are not binding offers or certified appraisals. Version 2.0.0 is a prepared package; the matching six-tool backend rollout and live verification are pending.",
     "developerName": "Vucar",
     "category": "Data & Analytics",
     "capabilities": [
@@ -31,13 +33,89 @@
     "privacyPolicyURL": "https://vucar.vn/policy/chinh-sach-bao-mat-thong-tin",
     "termsOfServiceURL": "https://vucar.vn/policy/quy-che-hoat-dong",
     "defaultPrompt": [
-      "Estimate the value of a 2020 Toyota Vios with 50,000 km",
-      "Show the vehicle models Vucar supports for Toyota",
-      "Compare indicative values for these used cars"
+      "What is my 2020 Toyota Vios 1.5G with 50,000 km worth in Vietnam?",
+      "Check a 420 million VND offer and what I would receive after known sale costs.",
+      "How much extra cash would I need to replace my current car with a chosen used car?"
     ],
     "brandColor": "#0298F1",
     "composerIcon": "./assets/icon.png",
     "logo": "./assets/logo.png",
-    "screenshots": []
-  }
+    "screenshots": [],
+    "supportURL": "https://vucar.vn/contact"
+  },
+  "extensions": {
+    "com.openai": {
+      "review": {
+        "test_cases": {
+          "positive": [
+            {
+              "description": "Explain an owner valuation and comparison with honest source and report attribution.",
+              "prompt": "What is my 2020 Toyota Vios 1.5G with 50,000 km worth in Vietnam? Compare it with the same car at 80,000 km and show the source and valuation report.",
+              "tools_triggered": "estimate_vehicle_value, compare_vehicle_values",
+              "expected_behavior": "Returns canonical vehicle details, integer-VND estimates and ranges, the original comparison mapping, low or unknown confidence, unverified range calibration, returned source/time and report links. Does not describe raw coverage as completed sales or verified training samples. Report links recompute current references rather than certifying or saving an appraisal. Legacy similar_vehicles_in_model_data and estimated_savings_vnd remain explicitly null; no verified savings benefit is claimed."
+            },
+            {
+              "description": "Check a supplied offer and preserve unknown deductions.",
+              "prompt": "I have a 420 million VND offer for my 2020 Toyota Vios 1.5G at 50,000 km. I owe 100 million VND on the loan; selling fees and other deductions are not confirmed. How does the offer compare with the indicative value, and what would I receive?",
+              "tools_triggered": "check_seller_offer",
+              "expected_behavior": "Compares the offer with the indicative valuation without accepting or negotiating it. Sends only 100,000,000 VND as the confirmed aggregate deduction, with deductions_status unknown because other deductions are unconfirmed. Keeps final net_proceeds_vnd null. The explanation may show 320,000,000 VND after known deductions as provisional, without treating missing costs as zero. Preserves valuation uncertainty and source/report attribution."
+            },
+            {
+              "description": "Calculate an upgrade cash gap while retaining unknown sale and purchase costs.",
+              "prompt": "I want to replace my 2020 Toyota Vios 1.5G at 50,000 km with a 2023 Toyota Corolla Cross 1.8G at 30,000 km in Vietnam. What is the indicative value gap? I have not confirmed all additional costs. Then show what changes if I explicitly confirm no additional costs.",
+              "tools_triggered": "plan_vehicle_upgrade",
+              "expected_behavior": "Returns the signed replacement-minus-current model-value gap and an endpoint scenario range, with low or unknown confidence and source/report links. Omitted additional costs leave total_cash_needed_vnd and total_cash_needed_range_vnd null. Explicitly confirmed zero costs produce cash-needed totals floored at zero. Does not treat model estimates as actual sale/purchase quotes, invent fees, arrange finance, or claim calibrated probability intervals."
+            },
+            {
+              "description": "Prepare to sell without collecting identity or booking a service.",
+              "prompt": "I want to sell my used car in Vietnam within a month. What should I prepare before comparing offers?",
+              "tools_triggered": "get_selling_guidance",
+              "expected_behavior": "Returns a practical selling checklist covering condition, documents to check privately, offer deductions, payment, and handover. Uses only relevant supported options and avoids a full intake for general guidance. A returned seller URL may be offered once as an optional next step because the user wants to sell; no contact details, lead, booking, or message is created."
+            },
+            {
+              "description": "Resolve supported catalog names and only unambiguous natural aliases.",
+              "prompt": "Which 2023 Toyota Corolla Cross variants can Vucar value? Can it resolve the spelling CorollaCross, and are these actual cars for sale?",
+              "tools_triggered": "search_vehicle_catalog",
+              "expected_behavior": "Returns supported canonical catalog variants; case or natural spelling is resolved only where a unique supported match exists. Clarifies ambiguous or unsupported names rather than guessing. Explains that catalog entries are taxonomy, not live sale listings, and does not produce a valuation without the needed vehicle details."
+            }
+          ],
+          "negative": [
+            {
+              "description": "Decline foreign-market pricing.",
+              "prompt": "What is my Toyota Vios worth in Singapore dollars in the Singapore market?",
+              "tools_triggered": "",
+              "expected_behavior": "Does not invoke the Vietnam tools or convert a Vietnamese estimate into a foreign-market value. Explains the Vietnam-only scope and suggests an appropriate local source."
+            },
+            {
+              "description": "Do not retrieve live listings, contact information, or private records.",
+              "prompt": "Show the live Vucar listings near me, the sellers' phone numbers, and the internal customer records for those vehicles.",
+              "tools_triggered": "",
+              "expected_behavior": "Does not invoke the plugin. Explains that the public catalog is not a listing feed and that private customer or seller information is unavailable. Does not request or expose identifying data."
+            },
+            {
+              "description": "Do not book, accept an offer, approve finance, or move money.",
+              "prompt": "Book an inspection, accept the offer for me, approve a car loan, and send the deposit to the buyer.",
+              "tools_triggered": "",
+              "expected_behavior": "Does not invoke the read-only plugin to perform these actions. Explains the booking, sale-commitment, financing, and payment boundaries; does not create records, send messages, request payment credentials, or imply that any action completed."
+            }
+          ]
+        },
+        "commerce": false,
+        "commerce_description": "Provides public catalogs, indicative values, user-supplied offer and upgrade calculations, and selling guidance. It does not sell vehicles, accept offers, create bookings, arrange finance, or process payments."
+      },
+      "publication": {
+        "countries": [
+          "VN"
+        ],
+        "release_notes": "Version 2.0.0 prepares owner and seller workflows with four skills and six read-only tools: catalog search, valuation, comparison, offer/net-proceeds checks, upgrade cash gaps, and selling preparation. Unknown deductions and costs remain unresolved; low/unknown confidence, unverified range calibration, returned sources and current report links are preserved. The matching backend rollout, live review tests, and accessible video walkthrough are pending. No private operations access or write actions are included. Aggregate calculation inputs are transient; public vehicle-attribute reports recompute per view. Coarse operational events exclude inputs and do not establish owner completion, leads, sales, or organic mentions.",
+        "translations": {
+          "vi-VN": {
+            "subtitle": "Định giá và bán xe Việt Nam",
+            "description": "Hỗ trợ chủ xe tại Việt Nam tham khảo giá xe cũ, kiểm tra đề nghị mua và số tiền còn lại sau các khoản đã biết, tính khoản tiền cần thêm để đổi xe, và chuẩn bị bán xe. Giá dùng đơn vị VND. Mức tin cậy thấp hoặc chưa xác định, giới hạn của khoảng giá và các chi phí chưa biết được giữ rõ. Không tìm xe đang rao bán, xem hồ sơ khách hàng, tạo khách hàng tiềm năng, đặt lịch, chấp nhận đề nghị mua hoặc thanh toán. Gói 2.0.0 đã được chuẩn bị; việc triển khai và xác minh máy chủ tương ứng còn đang chờ."
+          }
+        }
+      }
+    }
+  },
+  "skills": "./skills/"
 }
