@@ -8,6 +8,25 @@ All notable changes to this project are documented here. This project follows Se
 
 - Use an explicit HTTPS repository URL for Claude marketplace installation so consumers do not need GitHub SSH keys.
 
+## [2.0.0] - Prepared 2026-10-01
+
+### Added
+
+- Four owner and seller skills for valuation/report explanation, offer and net proceeds, upgrade cash gap, and sale preparation.
+- Review metadata with five positive and three negative scenarios, Vietnam availability, current Vucar policy links, and source artwork.
+- A deterministic OpenAI review ZIP builder and separate checks for the wrapped upload configuration and client marketplace configuration.
+
+### Changed
+
+- Prepare for six read-only tools while preserving catalog, valuation, and comparison.
+- Preserve low/unknown confidence, unverified range calibration, factual source/report attribution, and incomplete costs rather than inventing final amounts.
+- Keep unverified legacy coverage/savings fields null and document transient aggregate calculations, recomputed public report URLs, and coarse operational events without downstream outcome claims.
+- Replace the obsolete standalone submission packet with manifest-owned review metadata.
+
+### Pending
+
+- Backend rollout, live contract/review verification, and an accessible reviewer video. This package has not been submitted or published by these changes.
+
 ## [1.0.1] - 2026-08-21
 
 ### Security

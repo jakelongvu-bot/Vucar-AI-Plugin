@@ -14,8 +14,24 @@ from typing import Any
 ROOT = Path(__file__).resolve().parents[1]
 PLUGIN = ROOT / "plugins" / "vucar"
 ENDPOINT = "https://api.vucar.vn/mcp"
-VERSION = "1.0.1"
+VERSION = "2.0.0"
 REPOSITORY = "https://github.com/jakelongvu-bot/Vucar-AI-Plugin"
+EXPECTED_TOOLS = {
+    "search_vehicle_catalog", "estimate_vehicle_value", "compare_vehicle_values",
+    "check_seller_offer", "plan_vehicle_upgrade", "get_selling_guidance",
+}
+EXPECTED_SKILLS = {
+    "vehicle-value": {"search_vehicle_catalog", "estimate_vehicle_value", "compare_vehicle_values"},
+    "seller-offer": {"check_seller_offer"},
+    "vehicle-upgrade": {"search_vehicle_catalog", "plan_vehicle_upgrade"},
+    "sale-preparation": {"get_selling_guidance"},
+}
+PUBLIC_URLS = {
+    "websiteURL": "https://vucar.vn/",
+    "supportURL": "https://vucar.vn/contact",
+    "privacyPolicyURL": "https://vucar.vn/policy/chinh-sach-bao-mat-thong-tin",
+    "termsOfServiceURL": "https://vucar.vn/policy/quy-che-hoat-dong",
+}
 
 REQUIRED_FILES = {
     ".agents/plugins/marketplace.json",
@@ -46,15 +62,21 @@ REQUIRED_FILES = {
     "plugins/vucar/.mcp.json",
     "plugins/vucar/LICENSE",
     "plugins/vucar/NOTICE",
+    "plugins/vucar/PRIVACY.md",
     "plugins/vucar/README.md",
     "plugins/vucar/SECURITY.md",
+    "plugins/vucar/SUPPORT.md",
+    "plugins/vucar/TERMS.md",
     "plugins/vucar/assets/icon.png",
     "plugins/vucar/assets/logo.png",
     "scripts/smoke_test_mcp.py",
+    "scripts/build_review_zip.py",
     "scripts/validate_repository.py",
     "server.json",
     "tests/test_repository.py",
 }
+REQUIRED_FILES.update(f"plugins/vucar/skills/{name}/SKILL.md" for name in EXPECTED_SKILLS)
+REQUIRED_FILES.add("plugins/vucar/references/owner-tool-boundary.md")
 
 TEXT_SUFFIXES = {"", ".json", ".md", ".py", ".svg", ".txt", ".yml", ".yaml"}
 SECRET_PATTERNS = {
@@ -119,6 +141,124 @@ def nested_strings(value: Any) -> list[str]:
     return []
 
 
+def validate_submission_manifest(manifest: dict[str, Any], errors: list[str]) -> None:
+    """Check current submission fields without depending on a live portal or server."""
+    require(manifest.get("skills") == "./skills/", "Codex must declare the bundled skills", errors)
+    for forbidden in ("$schema", "apps", "hooks", "test_credentials", "reviewer_instructions"):
+        require(forbidden not in manifest, f"unsupported public manifest field: {forbidden}", errors)
+    interface = manifest.get("interface")
+    if not isinstance(interface, dict):
+        errors.append("submission interface must be an object")
+        return
+    for key, maximum in {"displayName": 30, "shortDescription": 30, "longDescription": 4000, "developerName": 80}.items():
+        value = interface.get(key)
+        require(isinstance(value, str) and bool(value.strip()) and len(value) <= maximum,
+                f"submission {key} must be nonempty and at most {maximum} characters", errors)
+        if key != "longDescription" and isinstance(value, str):
+            require(not any(character in value for character in "\n\r\t"), f"submission {key} must be one line", errors)
+    require(interface.get("category") == "Data & Analytics", "submission category must be Data & Analytics", errors)
+    for key, url in PUBLIC_URLS.items():
+        require(interface.get(key) == url, f"submission {key} must use the current Vucar URL", errors)
+    capabilities = interface.get("capabilities")
+    require(capabilities == ["Read"], "public capabilities must be Read only", errors)
+    extensions = manifest.get("extensions")
+    openai = extensions.get("com.openai") if isinstance(extensions, dict) else None
+    if not isinstance(openai, dict):
+        errors.append("extensions.com.openai must be an object")
+        return
+    require(set(openai) <= {"review", "publication"}, "unsupported OpenAI extension field", errors)
+    review = openai.get("review")
+    if not isinstance(review, dict):
+        errors.append("OpenAI review metadata must be an object")
+        return
+    require(set(review) <= {"test_cases", "demo_recording_url", "commerce", "commerce_description"},
+            "unsupported review field or credentials in public manifest", errors)
+    require(review.get("commerce") is False, "public plugin commerce declaration must be false", errors)
+    require(isinstance(review.get("commerce_description"), str) and bool(review["commerce_description"].strip()),
+            "commerce description must explain the read-only boundary", errors)
+    if "demo_recording_url" in review:
+        demo = review["demo_recording_url"]
+        require(isinstance(demo, str) and demo.startswith("https://") and "example." not in demo,
+                "demo recording must be a real HTTPS URL or be omitted", errors)
+    test_cases = review.get("test_cases")
+    if not isinstance(test_cases, dict):
+        errors.append("review.test_cases must be an object")
+        return
+    require(set(test_cases) == {"positive", "negative"}, "review must contain positive and negative lists", errors)
+    triggered_tools: set[str] = set()
+    for kind, expected_count in (("positive", 5), ("negative", 3)):
+        cases = test_cases.get(kind)
+        require(isinstance(cases, list) and len(cases) == expected_count,
+                f"review requires exactly {expected_count} {kind} cases", errors)
+        if not isinstance(cases, list):
+            continue
+        for index, case in enumerate(cases, 1):
+            label = f"{kind} review case {index}"
+            if not isinstance(case, dict):
+                errors.append(f"{label} must be an object")
+                continue
+            require(set(case) <= {"description", "prompt", "tools_triggered", "expected_behavior", "file_attachment_urls", "expected_output_url"},
+                    f"{label} has obsolete or unsupported fields", errors)
+            for key in ("description", "prompt", "expected_behavior"):
+                value = case.get(key)
+                require(isinstance(value, str) and bool(value.strip()), f"{label} needs {key}", errors)
+            tools = case.get("tools_triggered")
+            require(isinstance(tools, str), f"{label} needs a tools_triggered string", errors)
+            if isinstance(tools, str):
+                names = {value.strip() for value in tools.split(",") if value.strip()}
+                require(names <= EXPECTED_TOOLS, f"{label} declares an unsupported tool", errors)
+                if kind == "positive":
+                    require(bool(names), f"{label} must trigger a supported tool", errors)
+                    triggered_tools.update(names)
+                else:
+                    require(not names, f"{label} must not trigger tools", errors)
+    require(triggered_tools == EXPECTED_TOOLS, "positive review cases must cover all six public tools", errors)
+    publication = openai.get("publication")
+    if not isinstance(publication, dict):
+        errors.append("OpenAI publication metadata must be an object")
+        return
+    require(set(publication) <= {"countries", "release_notes", "translations"}, "unsupported publication field", errors)
+    require(publication.get("countries") == ["VN"], "publication market must be Vietnam", errors)
+    notes = publication.get("release_notes")
+    require(isinstance(notes, str) and bool(notes.strip()), "publication release notes are required", errors)
+    translations = publication.get("translations", {})
+    require(isinstance(translations, dict), "translations must be an object", errors)
+    if isinstance(translations, dict):
+        for locale, translation in translations.items():
+            require(bool(locale.strip()) and isinstance(translation, dict), "translation must have a locale and object", errors)
+            if isinstance(translation, dict):
+                require(set(translation) <= {"subtitle", "description"}, "unsupported translation field", errors)
+                for key, limit in (("subtitle", 30), ("description", 4000)):
+                    if key in translation:
+                        value = translation[key]
+                        require(isinstance(value, str) and bool(value.strip()) and len(value) <= limit,
+                                f"translation {locale} {key} is invalid", errors)
+
+
+def validate_skills(errors: list[str]) -> None:
+    skill_root = PLUGIN / "skills"
+    actual = {path.parent.name for path in skill_root.glob("*/SKILL.md")}
+    require(actual == set(EXPECTED_SKILLS), "public package must contain exactly four owner/seller skills", errors)
+    for name, tools in EXPECTED_SKILLS.items():
+        path = skill_root / name / "SKILL.md"
+        if not path.is_file():
+            continue
+        content = path.read_text(encoding="utf-8")
+        header = re.match(r"\A---\nname: ([a-z0-9-]+)\ndescription: ([^\n]+)\n---\n", content)
+        require(header is not None and header.group(1) == name, f"skill frontmatter is invalid: {name}", errors)
+        require(len(content) <= 5000, f"skill is unnecessarily large: {name}", errors)
+        declared = set(re.findall(r"\b(?:search_|estimate_|compare_|check_|plan_|get_)[a-z_]+\b", content))
+        require(declared == tools, f"skill tool scope is incomplete or unsupported: {name}", errors)
+        links = re.findall(r"\]\(([^)]+)\)", content)
+        require(bool(links), f"skill has no public-boundary reference: {name}", errors)
+        for link in links:
+            if link.startswith(("https://", "#")):
+                continue
+            target = (path.parent / link).resolve()
+            require(target.is_relative_to(PLUGIN.resolve()) and target.is_file(),
+                    f"skill reference escapes package or is missing: {name}: {link}", errors)
+
+
 def validate_filesystem(errors: list[str]) -> None:
     actual = {
         path.relative_to(ROOT).as_posix()
@@ -161,6 +301,7 @@ def validate_codex(errors: list[str]) -> None:
         )
 
     manifest = load_json("plugins/vucar/.codex-plugin/plugin.json")
+    validate_submission_manifest(manifest, errors)
     require(manifest.get("name") == "vucar", "Codex plugin name must match its folder", errors)
     require(manifest.get("version") == VERSION, "Codex plugin version mismatch", errors)
     require(manifest.get("repository") == REPOSITORY, "Codex repository URL mismatch", errors)
@@ -201,6 +342,8 @@ def validate_claude(errors: list[str]) -> None:
     require(manifest.get("version") == VERSION, "Claude plugin version mismatch", errors)
     require(manifest.get("repository") == REPOSITORY, "Claude repository URL mismatch", errors)
     require(manifest.get("license") == "Apache-2.0", "Claude license must be Apache-2.0", errors)
+    require(set(manifest) == {"name", "version", "description", "author", "homepage", "repository", "license", "keywords"},
+            "Claude manifest must keep its supported identity fields separate from OpenAI metadata", errors)
 
     mcp_config = load_json("plugins/vucar/.mcp.json")
     require(
@@ -307,11 +450,11 @@ def validate_version_and_docs(errors: list[str]) -> None:
         errors,
     )
     architecture = (ROOT / "docs" / "ARCHITECTURE.md").read_text(encoding="utf-8")
-    require(
-        "same `./.mcp.json` file" in architecture and "incompatible" not in architecture,
-        "architecture must describe the shared cross-client MCP map",
-        errors,
-    )
+    require("same `./.mcp.json` file" in architecture and "mcpServers" in architecture,
+            "architecture must describe client and upload MCP formats", errors)
+    for name in ("PRIVACY.md", "TERMS.md", "SUPPORT.md"):
+        require((PLUGIN / name).read_bytes() == (ROOT / name).read_bytes(),
+                f"installed plugin {name} must match the repository copy", errors)
     smoke = (ROOT / "scripts" / "smoke_test_mcp.py").read_text(encoding="utf-8")
     for annotation in (
         "readOnlyHint",
@@ -339,6 +482,7 @@ def validate_repository() -> None:
     validate_codex(errors)
     validate_claude(errors)
     validate_registry(errors)
+    validate_skills(errors)
     validate_public_safety(errors)
     validate_version_and_docs(errors)
     if errors:
@@ -352,7 +496,7 @@ def main() -> int:
     except ValidationFailure as exc:
         print(str(exc), file=sys.stderr)
         return 1
-    print(f"Validated Vucar plugin {VERSION}: dual marketplaces, dual manifests, one shared read-only MCP endpoint, and public-safety checks passed.")
+    print(f"Validated Vucar plugin {VERSION}: separate client/upload formats, four owner skills, six-tool review coverage, and public-safety checks passed. Backend rollout and review video remain separate gates.")
     return 0
 
 
