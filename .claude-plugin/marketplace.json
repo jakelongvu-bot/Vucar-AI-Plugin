@@ -1,14 +1,14 @@
 {
   "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
   "name": "vucar",
-  "description": "Official read-only Vietnam used-car valuation and vehicle price intelligence from Vucar.",
+  "description": "Read-only tools for car owners in Vietnam: indicative VND values, offer and net-proceeds checks, upgrade cash gaps, and selling preparation.",
   "owner": {
     "name": "Vucar"
   },
   "plugins": [
     {
       "name": "vucar",
-      "description": "Search Vietnam car catalogs, estimate used-car market and resale values in VND, and compare vehicle prices through Vucar's read-only public MCP server.",
+      "description": "Read-only tools for car owners in Vietnam: indicative VND values, offer and net-proceeds checks, upgrade cash gaps, and selling preparation.",
       "author": {
         "name": "Vucar"
       },
