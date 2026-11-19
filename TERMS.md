@@ -1,12 +1,12 @@
 # Terms of Use
 
-Effective: 4 August 2026
+Package revision: 1 October 2026. The matching `2.0.0` backend rollout is pending.
 
 These repository terms apply to the public Vucar vehicle intelligence MCP integration and supplement Vucar's [official operating rules](https://vucar.vn/policy/quy-che-hoat-dong).
 
 ## Permitted use
 
-You may use the public tools to search supported vehicle taxonomy, request indicative used-car value estimates, and compare indicative values. You must use the service lawfully and comply with reasonable technical limits.
+You may use the public tools to search supported vehicle taxonomy, request and compare indicative used-car values, assess a supplied offer, calculate net proceeds or an upgrade cash gap from known amounts, and prepare to sell. You must use the service lawfully and comply with reasonable technical limits.
 
 You may not:
 
@@ -21,6 +21,8 @@ You may not:
 Vehicle values are automated, indicative estimates based on the attributes supplied and available model data. They can be incomplete, delayed, or inaccurate. Actual condition, documents, location, market demand, inspection findings, and other factors can materially change a vehicle's value.
 
 An estimate is not a purchase offer, guarantee, warranty, professional appraisal, credit decision, investment recommendation, or financial advice. Verify important decisions independently.
+
+Low or unknown pricing confidence and unverified value-range calibration must be preserved. Calculations may be incomplete when fees, debt, or other costs are unknown. A report link recomputes a current informational reference; it does not save or certify an appraisal. The tools do not accept an offer, book a service, arrange finance, contact another person, or process a payment.
 
 ## Availability and changes
 
